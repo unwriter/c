@@ -8,6 +8,7 @@
     "bcode": "0.0.7",
     "file-type": "10.8.0",
     "make-dir": "2.1.0",
+    "node-gzip": "1.1.2",
     "node-lmdb": "0.6.0"
   }
 }

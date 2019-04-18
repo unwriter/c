@@ -3,6 +3,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 const lmdb = require('node-lmdb');
 const fileType = require('file-type');
+const { ungzip } = require('node-gzip');
 var en = new lmdb.Env();
 var db
 var fspath
@@ -30,15 +31,21 @@ var B = function(o) {
 var save = function(h, outs, env) {
   let re = /(b:\/\/)([a-zA-Z0-9]+)/g
   let ps = outs.map(function(out) {
-    return new Promise(function(resolve, reject) {
+    return new Promise(async function(resolve, reject) {
       let buf = null
       let content
       let hash
       if (out.lb2 && typeof out.lb2 === 'string') {
         buf = Buffer.from(out.lb2, 'base64');
+        if (out.s4 === 'gzip') {
+          buf = await ungzip(buf)
+        }
         hash = crypto.createHash('sha256').update(buf).digest('hex');
       } else if (out.b2 && typeof out.b2 === 'string') {
         buf = Buffer.from(out.b2, 'base64');
+        if (out.s4 === 'gzip') {
+          buf = await ungzip(buf)
+        }
         hash = crypto.createHash('sha256').update(buf).digest('hex');
       }
       console.log("hash = ", hash)
@@ -96,7 +103,7 @@ module.exports = {
   planaria: '0.0.1',
   from: 566470,
   name: 'C://',
-  version: '0.0.3',
+  version: '0.0.4',
   description: 'Content Addressable Storage over Bitcoin',
   address: '1KuUr2pSJDao97XM8Jsq8zwLS6W1WtFfLg',
   index: {
