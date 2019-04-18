@@ -5,7 +5,8 @@ const lmdb = require('node-lmdb');
 const fileType = require('file-type');
 const { ungzip } = require('node-gzip');
 var en = new lmdb.Env();
-var db
+var db_mediatype
+var db_b
 var fspath
 var B = function(o) {
   let outputs = []
@@ -29,11 +30,9 @@ var B = function(o) {
   }
 }
 var save = function(h, outs, env) {
-  let re = /(b:\/\/)([a-zA-Z0-9]+)/g
   let ps = outs.map(function(out) {
     return new Promise(async function(resolve, reject) {
       let buf = null
-      let content
       let hash
       if (out.lb2 && typeof out.lb2 === 'string') {
         buf = Buffer.from(out.lb2, 'base64');
@@ -51,7 +50,6 @@ var save = function(h, outs, env) {
       console.log("hash = ", hash)
       if (buf) {
         let type;
-        let data
         try {
           let detection = fileType(buf)
           if (detection) {
@@ -75,7 +73,8 @@ var save = function(h, outs, env) {
             } else {
               console.log("[put]", hash, type)
               let txn = en.beginTxn();
-              txn.putString(db, hash, type)
+              txn.putString(db_mediatype, hash, type)
+              txn.putString(db_b, h, hash)
               txn.commit();
               resolve(hash)
             }
@@ -97,13 +96,14 @@ var initLMDB = function(m) {
     mapSize: 2*1024*1024*1024,
     maxDbs: 3
   });
-  db = en.openDbi({ name: "mediatype", create: true })
+  db_mediatype = en.openDbi({ name: "mediatype", create: true })
+  db_b = en.openDbi({ name: "b", create: true })
 }
 module.exports = {
   planaria: '0.0.1',
   from: 566470,
   name: 'C://',
-  version: '0.0.4',
+  version: '0.0.5',
   description: 'Content Addressable Storage over Bitcoin',
   address: '1KuUr2pSJDao97XM8Jsq8zwLS6W1WtFfLg',
   index: {

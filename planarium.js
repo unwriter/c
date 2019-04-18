@@ -3,7 +3,8 @@ const mkdir = require('make-dir');
 const fs = require('fs');
 const lmdb = require('node-lmdb');
 var en = new lmdb.Env();
-var db
+var db_mediatype
+var db_b
 var dbpath
 var filepath
 module.exports = {
@@ -32,7 +33,8 @@ module.exports = {
         await mkdir(dbpath)
         //  c. Connect to DB
         en.open({ path: dbpath, mapSize: 2*1024*1024*1024, maxDbs: 3 });
-        db = en.openDbi({ name: "mediatype", create: true })
+        db_mediatype = en.openDbi({ name: "mediatype", create: true })
+        db_b = en.openDbi({ name: "b", create: true })
 
         // [2] C:// Folder
         //  a. m.fs.path contains the path to the current state machine's root filesystem
@@ -45,7 +47,7 @@ module.exports = {
 
           // 2. Get the content-type info for the hash from LMDB
           let txn = en.beginTxn()
-          let value = txn.getString(db, req.params.id)
+          let value = txn.getString(db_mediatype, req.params.id)
           txn.commit()
           if (value) { res.setHeader('Content-type', value) }
           res.setHeader('bitcoin-address', process.env.ADDRESS)
@@ -63,7 +65,32 @@ module.exports = {
             });
             filestream.pipe(res)
           })
+        },
+        "/b/:id": function(req, res) {
+          const txn = en.beginTxn()
+          const c_hash = txn.getString(db_b, req.params.id)
+          if (!c_hash) {
+            txn.commit()
+            return res.status(404).send("")
+          }
+          const value = txn.getString(db_mediatype, c_hash)
+          txn.commit()
+          if (value) { res.setHeader('Content-type', value) }
+          res.setHeader('bitcoin-address', process.env.ADDRESS)
+          console.log("[serve]", req.params.id, value)
 
+          let filename = filepath + c_hash;
+          fs.stat(filename, function(err, stat) {
+            if (stat && stat.size) {
+              res.setHeader('Content-Length', stat.size)
+            }
+            // 4. Send file
+            let filestream = fs.createReadStream(filename)
+            filestream.on("error", function(e) {
+              res.send("")
+            });
+            filestream.pipe(res)
+          })
         }
       }
     },
