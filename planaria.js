@@ -37,13 +37,21 @@ var save = function(h, outs, env) {
       if (out.lb2 && typeof out.lb2 === 'string') {
         buf = Buffer.from(out.lb2, 'base64');
         if (out.s4 === 'gzip') {
-          buf = await ungzip(buf)
+          try {
+            buf = await ungzip(buf)
+          } catch (err) {
+            console.log("invalid gzip", h, err)
+          }
         }
         hash = crypto.createHash('sha256').update(buf).digest('hex');
       } else if (out.b2 && typeof out.b2 === 'string') {
         buf = Buffer.from(out.b2, 'base64');
         if (out.s4 === 'gzip') {
-          buf = await ungzip(buf)
+          try {
+            buf = await ungzip(buf)
+          } catch (err) {
+            console.log("invalid gzip", h, err)
+          }
         }
         hash = crypto.createHash('sha256').update(buf).digest('hex');
       }
