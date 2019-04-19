@@ -50,19 +50,18 @@ var save = function(h, outs, env) {
       console.log("hash = ", hash)
       if (buf) {
         let type;
-        try {
-          let detection = fileType(buf)
-          if (detection) {
-            type = detection.mime
-            console.log("type detected from header = ", type)
-          } else if (out.s3 && out.s3.length > 0) {
-            type = out.s3
-            console.log("type not detected but set from out.s3 = ", type)
-          }
-        } catch (e) {
-          if (out.s3 && out.s3.length > 0) {
-            type = out.s3
-            console.log("type detected from out.s3 = ", type)
+        if (out.s3 && out.s3.length > 0) {
+          type = out.s3
+          console.log("type detected from out.s3 = ", type)
+        } else {
+          try {
+            const detection = fileType(buf)
+            if (detection) {
+              type = detection.mime
+              console.log("type detected from data = ", type)
+            }
+          } catch (e) {
+            console.log("type detection error", e)
           }
         }
         if (type) {
@@ -103,7 +102,7 @@ module.exports = {
   planaria: '0.0.1',
   from: 566470,
   name: 'C://',
-  version: '0.0.5',
+  version: '0.0.6',
   description: 'Content Addressable Storage over Bitcoin',
   address: '1KuUr2pSJDao97XM8Jsq8zwLS6W1WtFfLg',
   index: {
